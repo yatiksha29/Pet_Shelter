@@ -10,6 +10,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
+
+    <link rel="stylesheet" href="style/responsive.css">
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>
@@ -61,65 +64,109 @@
 
 </head>
 
-<body class="p-3 mb-2 bg-info-subtle text-emphasis-info" ng-app="mymodule" ng-controller="mycontroller" ng-init="doFetchCities();">
-    <div class="container">
-        <div class="p-3 mb-2 bg-body text-body">
-            <nav class="navbar navbar-expand-lg bg-success p-2 text-dark bg-opacity-50">
-                <div class="container-fluid">
-                    <a class="navbar-brand" href="#">
-                        <img src="pics/petLogo3.webp" alt="Logo" class="rounded-circle" width="70" height="60"
-                            class="d-inline-block align-text-top">
-                        Cozy Cove
-                    </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <span style="float:right;">Welcome: <span id="auser"></span> </span>
-                </div>
-            </nav>
-            <div class="input-group">
-                <div class="w-10 p-3">
-                    <label class="form-label">Cities</label>
-                </div>
-                <div class="w-75 p-3">
-                    <select class="form-select" ng-change="doShowSel();" ng-model="selId" name="txtCity" id="txtCity">
-                        <option value="">Choose...</option>
-                        <option ng-repeat="obj in jsonAllCities" value={{obj.city}}>{{obj.city}}</option>
-                    </select>
 
+<body class="shelter-page" ng-app="mymodule"
+      ng-controller="mycontroller"
+      ng-init="doFetchCities();">
 
-                    <div class="container" style="margin-top: 50px; margin-right:50px">
-                        <div class="row">
-                            <div class="col-md-3" ng-repeat="obj in jsonData">
-                                <div class="card  border-primary mb-3" style="max-width: 20rem; height:27rem;">
-                                    <center> <img src="uploads/{{obj.shelpic}}"  height="100" width="100" alt="...">
-                                    </center>
-                                    <div class="card-body">
-                                        <center>
-                                        <h5 class="card-title">{{obj.name}}</h5>
-                                        </center>
-                                        <h6 class="card-subtitle mb-2 text-body-dark">Emailid:</h6>
-                                        <p class="card-text">
-                                            {{obj.emailid}}
-                                        </p>
-                                        <h6 class="card-subtitle mb-2 text-body-dark">Website:</h6>
-                                        <p class="card-text">
-                                            {{obj.website}}
-                                        </p>
-                                        <h6 class="card-subtitle mb-2 text-body-dark">City:</h6>
-                                        <p class="card-text">
-                                            {{obj.city}}
-                                        </p>
-                                        <button class="btn btn-primary">More Details</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="container-fluid shelter-main">
+
+        <!-- NAVBAR -->
+        <nav class="navbar shelter-navbar">
+
+            <div class="container-fluid">
+
+                <a class="navbar-brand shelter-brand" href="#">
+                    <img src="pics/petLogo3.webp"
+                         alt="Logo"
+                         class="rounded-circle">
+
+                    <span>Cozy Cove</span>
+                </a>
+
+                <span class="welcome-text">
+                    Welcome: <span id="auser"></span>
+                </span>
+
             </div>
-</body>
 
+        </nav>
+
+
+        <!-- CITY SELECTION -->
+        <div class="city-section">
+
+            <label class="form-label">Cities</label>
+
+            <select class="form-select"
+                    ng-change="doShowSel();"
+                    ng-model="selId"
+                    name="txtCity"
+                    id="txtCity">
+
+                <option value="">Choose...</option>
+
+                <option ng-repeat="obj in jsonAllCities"
+                        value="{{obj.city}}">
+                    {{obj.city}}
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- SHELTER CARDS -->
+        <div class="container-fluid shelter-list">
+
+            <div class="row g-4">
+
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3"
+                     ng-repeat="obj in jsonData">
+
+                    <div class="card shelter-card h-100">
+
+                        <div class="shelter-image">
+
+                            <img src="uploads/{{obj.shelpic}}"
+                                 alt="Shelter Image">
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <h5 class="card-title">
+                                {{obj.name}}
+                            </h5>
+
+                            <div class="shelter-info">
+
+                                <h6>Emailid:</h6>
+                                <p>{{obj.emailid}}</p>
+
+                                <h6>Website:</h6>
+                                <p>{{obj.website}}</p>
+
+                                <h6>City:</h6>
+                                <p>{{obj.city}}</p>
+
+                            </div>
+
+                            <button class="btn btn-primary w-100">
+                                More Details
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
 </html>

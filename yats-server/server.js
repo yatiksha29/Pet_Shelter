@@ -27,6 +27,7 @@ const configKuch={
 };
 
 const mysql=mysql2.createConnection(configKuch); //connection object
+
 mysql.connect(function(err)
 {
     if(err==null)
@@ -62,6 +63,11 @@ app.get("/ownerPro", function (req, resp) {
     resp.sendFile(path.join(__dirname, "public", "owner-profile.html"));
 });
 
+// Shelter Profile Information page
+app.get("/shelterPro", function (req, resp) {
+    resp.sendFile(path.join(__dirname, "public", "shelter-profile.html"));
+});
+
 // Search Shelter page (owner side)
 app.get("/search-shelter", function (req, resp) {
     resp.sendFile(path.join(__dirname, "public", "shelter-finder.html"));
@@ -87,6 +93,7 @@ app.get("/Fetch-all-cities", function (req, resp) {
 app.get("/fetch-shfinder-record", function (req, resp) {
     let city = req.query.citykuch;
     let query = "select * from sprofile where city=?";
+
     mysql.query(query, [city], function (err, resTable) {
         if (err) {
             console.log(err);
@@ -101,6 +108,7 @@ app.get("/fetch-shfinder-record", function (req, resp) {
 app.get("/fetch-record", function (req, resp) {
     let em = req.query.emailKuch;
     let query = "select * from sprofile where emailid=?";
+
     mysql.query(query, [em], function (err, resTable) {
         if (err) {
             console.log(err);
@@ -130,19 +138,171 @@ app.get("/fetch-json-record", function (req, resp) {
 app.use(fileupload());
 app.use(express.urlencoded({ extended: true }));
 
+// SHELTER PROFILE SAVE
+app.post("/ssave", function (req, resp) {
+
+    let d = req.body;
+
+    let idpic = "nopic.jpeg";
+    let shelpic = "nopic.jpeg";
+
+    if (!d.txtEmail) {
+        resp.status(400).send("Email is missing. Please sign in again.");
+        return;
+    }
+
+    let filesToSave = [];
+
+    if (req.files && req.files.idpic) {
+        idpic = d.txtEmail + "-" + req.files.idpic.name;
+
+        filesToSave.push(
+            req.files.idpic.mv(
+                path.join(__dirname, "public", "uploads", idpic)
+            )
+        );
+    }
+
+    if (req.files && req.files.shelpic) {
+        shelpic = d.txtEmail + "-" + req.files.shelpic.name;
+
+        filesToSave.push(
+            req.files.shelpic.mv(
+                path.join(__dirname, "public", "uploads", shelpic)
+            )
+        );
+    }
+
+    Promise.all(filesToSave)
+        .then(function () {
+
+            let query = "insert into sprofile (emailid,name,contact,address,city,website,since,selpets,idpic,shelpic) values (?,?,?,?,?,?,?,?,?,?)";
+
+            mysql.query(query, [
+                d.txtEmail,
+                d.txtName,
+                d.txtCon,
+                d.txtAdd,
+                d.txtCity,
+                d.txtWeb,
+                d.txtSin,
+                d.txtSel,
+                idpic,
+                shelpic
+            ], function (err) {
+
+                if (err) {
+                    console.log(err);
+                    resp.status(500).send(err.message);
+                    return;
+                }
+
+                resp.send("Shelter Profile Saved Successfully");
+            });
+        })
+        .catch(function (err) {
+            console.log(err);
+            resp.status(500).send("File upload failed: " + err.message);
+        });
+});
+
+
+// SHELTER PROFILE UPDATE
+app.post("/supdate", function (req, resp) {
+
+    let d = req.body;
+
+    if (!d.txtEmail) {
+        resp.status(400).send("Email is missing. Please sign in again.");
+        return;
+    }
+
+    let idpic = d.hdn || "nopic.jpeg";
+    let shelpic = d.hdn1 || "nopic.jpeg";
+
+    let filesToSave = [];
+
+    if (req.files && req.files.idpic) {
+        idpic = d.txtEmail + "-" + req.files.idpic.name;
+
+        filesToSave.push(
+            req.files.idpic.mv(
+                path.join(__dirname, "public", "uploads", idpic)
+            )
+        );
+    }
+
+    if (req.files && req.files.shelpic) {
+        shelpic = d.txtEmail + "-" + req.files.shelpic.name;
+
+        filesToSave.push(
+            req.files.shelpic.mv(
+                path.join(__dirname, "public", "uploads", shelpic)
+            )
+        );
+    }
+
+    Promise.all(filesToSave)
+        .then(function () {
+
+            let query = "update sprofile set name=?,contact=?,address=?,city=?,website=?,since=?,selpets=?,idpic=?,shelpic=? where emailid=?";
+
+            mysql.query(query, [
+                d.txtName,
+                d.txtCon,
+                d.txtAdd,
+                d.txtCity,
+                d.txtWeb,
+                d.txtSin,
+                d.txtSel,
+                idpic,
+                shelpic,
+                d.txtEmail
+            ], function (err, result) {
+
+                if (err) {
+                    console.log(err);
+                    resp.status(500).send(err.message);
+                    return;
+                }
+
+                if (result.affectedRows === 1) {
+                    resp.send("Shelter Profile Updated Successfully");
+                } else {
+                    resp.send("No existing shelter profile found. Please use Save first.");
+                }
+            });
+        })
+        .catch(function (err) {
+            console.log(err);
+            resp.status(500).send("File upload failed: " + err.message);
+        });
+});
+
 // OWNER PROFILE SAVE
 app.post("/osave", function (req, resp) {
+
     let d = req.body;
 
     let picname = "nopic.jpeg";
     if (req.files != null && req.files.ppic != null) {
+
         picname = d.txtEmail + "-" + req.files.ppic.name;
         const savePath = process.cwd() + "/public/uploads/" + picname;
         req.files.ppic.mv(savePath);
         console.log("Owner ppic uploaded");
     }
 
-    let query = "insert into oprofile(emailid,name,contact,address,city,ppic) values(?,?,?,?,?,?)";
+    let petType = "";
+
+    if (Array.isArray(d.txtP)) {
+        petType = d.txtP.join(",");
+    }
+    else {
+        petType = d.txtP || "";
+    }
+
+    let query = "insert into oprofile(emailid,name,contact,address,city,ppic,ptype) values(?,?,?,?,?,?,?)";
 
     mysql.query(query, [
         d.txtEmail,
@@ -151,11 +311,15 @@ app.post("/osave", function (req, resp) {
         d.txtAdd,
         d.txtCity,
         picname,
-        d.txtP    // select multiple ka name="txtP"
-    ], function (err) {
+        petType
+        //d.txtP    // select multiple ka name="txtP"
+    ], function (err, result) {
+
         if (err) {
+            console.log(err);
             resp.send(err.message);
-        } else {
+        }
+        else {
             resp.send("Saved");
         }
     });
@@ -170,10 +334,18 @@ app.post("/oupdate", function (req, resp) {
         picname = d.txtEmail + "-" + req.files.ppic.name;
         const savePath = process.cwd() + "/public/uploads/" + picname;
         req.files.ppic.mv(savePath);
-        console.log("Owner ppic uploaded (update)");
     }
 
-    let query = "update oprofile set name=?,contact=?,address=?,city=?,ppic=? where emailid=?";
+    let petType = "";
+
+    if (Array.isArray(d.txtP)) {
+        petType = d.txtP.join(",");
+    }
+    else {
+        petType = d.txtP || "";
+    }
+
+    let query = "update oprofile set name=?,contact=?,address=?,city=?,ppic=?,ptype=? where emailid=?";
 
     mysql.query(query, [
         d.txtName,
@@ -181,14 +353,18 @@ app.post("/oupdate", function (req, resp) {
         d.txtAdd,
         d.txtCity,
         picname,
-        d.txtP,
+        petType,
         d.txtEmail
     ], function (err, result) {
+
         if (err) {
+            console.log(err);
             resp.send(err.message);
-        } else if (result.affectedRows == 1) {
+        }
+        else if (result.affectedRows == 1) {
             resp.send("Updated");
-        } else {
+        }
+        else {
             resp.send("Invalid ID");
         }
     });
@@ -215,11 +391,53 @@ app.get("/signup-process",function(req,resp)
 })
 
 //-------------URL handlers
-app.get("/signup",function(req,resp)
-{
-    const filePath=__dirname+"/public/signup.html";
-    resp.sendFile(filePath);
-})
+//------------- SIGNUP ROUTE -------------
+
+app.post("/signup", function (req, resp) {
+
+    let em = req.body.emailKuch;
+    let pwd = req.body.pwdKuch;
+    let utype = req.body.utypeKuch;
+
+    // Check duplicate email
+    mysql.query(
+        "select * from users where emailid=?",
+        [em],
+        function (err, resTable) {
+
+            if (err) {
+                console.log(err);
+                resp.status(500).send(err.message);
+                return;
+            }
+
+            if (resTable.length > 0) {
+                resp.send("Email already registered");
+                return;
+            }
+
+            // Insert new user
+            let query = "insert into users (emailid,pwd,Utype,status) values(?,?,?,?)";
+
+            mysql.query(
+                query,
+                [em, pwd, utype, 1],
+                function (err, result) {
+
+                    if (err) {
+                        console.log(err);
+                        resp.status(500).send(err.message);
+                        return;
+                    }
+
+                    resp.send("Signup Successfully");
+                }
+            );
+
+        }
+    );
+
+});
 
 app.get("/signup-secure",function(req,resp)
 {
@@ -270,16 +488,17 @@ app.get("/profile-front",function(req,resp)
 {
     resp.sendFile(process.cwd()+"/public/profile-db.html");
 })
-
+// DATABASE PROFILE SAVE
 
 ///edit in this processs for update functionand change the update query below 
 app.post("/db-profile-process",function(req,resp)
 {
     const email=req.body.txtEmail;
     const dob=req.body.dob;
+
     let filename="nopic.jpeg";
 
-    if(req.files!=null)
+    if(req.files!=null&& req.files.ppic != null)
     {
         filename=req.body.txtEmail+"-"+req.files.ppic.name;
         const path=process.cwd()+"/public/uploads/"+filename;
@@ -411,6 +630,60 @@ app.get("/login", function (req, resp) {
         } else {
             resp.send("Invalid Email or Password");
         }
+    });
+});
+
+// CHECK OLD PASSWORD
+app.get("/chkpwd", function (req, resp) {
+
+    let email = req.query.emailkuch;
+    let pwd = req.query.pwdkuch;
+
+    let query = "select * from users where emailid=? and pwd=? and status=1";
+
+    mysql.query(query, [email, pwd], function (err, resTable) {
+
+        if (err) {
+            resp.send("error");
+            return;
+        }
+
+        if (resTable.length == 1)
+            resp.send("valid");
+        else
+            resp.send("invalid");
+
+    });
+});
+
+
+// UPDATE PASSWORD
+app.post("/update-password", function (req, resp) {
+
+    let email = req.body.changeEmail;
+    let oldPass = req.body.changePass;
+    let newPass = req.body.txtNew;
+    let rePass = req.body.txtRe;
+
+    if (newPass != rePass) {
+        resp.send("Passwords do not match");
+        return;
+    }
+
+    let query = "update users set pwd=? where emailid=? and pwd=? and status=1";
+
+    mysql.query(query, [newPass, email, oldPass], function (err, result) {
+
+        if (err) {
+            resp.send(err.message);
+            return;
+        }
+
+        if (result.affectedRows == 1)
+            resp.send("Password Updated Successfully");
+        else
+            resp.send("Password Update Failed");
+
     });
 });
 
