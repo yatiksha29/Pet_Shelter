@@ -31,18 +31,6 @@ times, and helping shelters run more efficiently.
 | Backend | Node.js, Express.js |
 | Database | MySQL |
 
-## Getting Started (Local Setup)
-
-```bash
-git clone https://github.com/yatiksha29/pet-shelter-nodejs.git
-cd pet-shelter-nodejs
-npm install
-node yats-server/server.js
-```
-
-Set up your MySQL database and connection details before running
-locally.
-
 ## What This Project Demonstrates
 
 - Designing a relational database schema from scratch
